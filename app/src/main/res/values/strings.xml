@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">CameraDemo</string>
+    <string name="existing_camera">Using Existing Camera Apps</string>
+    <string name="custom_camera">Building a Camera App</string>
+    <string name="flash_light">flash light</string>
 </resources>

@@ -18,5 +18,4 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
     }
 
-
 }

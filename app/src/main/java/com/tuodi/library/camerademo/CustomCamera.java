@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.Spinner;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.List;
@@ -36,6 +35,7 @@ public class CustomCamera extends Fragment {
     Camera camera;
     @Bind(R.id.spinnerPictureSize)
     Spinner spinnerPictureSize;
+    boolean mFlashStatus;
 
     @Nullable
     @Override
@@ -77,39 +77,12 @@ public class CustomCamera extends Fragment {
 
                     parameters = camera.getParameters();
                     Log.d(TAG, "afterParameters: " + parameters.flatten());
-                    flashModeslist = parameters.getSupportedFlashModes();
 
-                    //flashModeslist返回null表示不支持设置闪光灯(可认为无闪光灯)
-                    if (null == flashModeslist) {
-                        Toast.makeText(getActivity(), "camera without flash", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    boolean isSupportedFlashOn, isSupportedFlashOff;
-
-                    if (flashModeslist.contains(Camera.Parameters.FLASH_MODE_ON)) {
-                        isSupportedFlashOn = true;
-                    } else {
-                        isSupportedFlashOn = false;
-                    }
-
-                    if (flashModeslist.contains(Camera.Parameters.FLASH_MODE_OFF)) {
-                        isSupportedFlashOff = true;
-                    } else {
-                        isSupportedFlashOff = false;
-                    }
-
-                    if (Camera.Parameters.FLASH_MODE_TORCH.equals(parameters.getFlashMode())) {
-                        if (isSupportedFlashOff)
-                            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                    } else {
-                        if (isSupportedFlashOn) {
-                            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-                        }
-                    }
+                    mFlashStatus = Camera.Parameters.FLASH_MODE_TORCH.equals(parameters.getFlashMode()) || Camera.Parameters.FLASH_MODE_ON.equals(parameters.getFlashMode()) ? true : false;
+                    mFlashStatus = !mFlashStatus;
+                    CameraConfigurationHelper.setTorch(parameters, mFlashStatus);
 
                     camera.setParameters(parameters);
-
                     Camera.Parameters afterParameters;
 
                     afterParameters = camera.getParameters();

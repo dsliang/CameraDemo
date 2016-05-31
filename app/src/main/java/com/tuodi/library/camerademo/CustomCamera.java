@@ -4,7 +4,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -14,7 +14,9 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -23,19 +25,24 @@ import butterknife.OnClick;
 /**
  * Created by dsliang on 2016/5/27.
  */
-public class CustomCamera extends Fragment {
+public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink {
 
     private static final String TAG = CustomCamera.class.getSimpleName();
+
+    //闪光灯
+    private static final int FLASH_LIGHT = 0x1;
 
     @Bind(R.id.surfaceCameraPreviewView)
     SurfaceView surfaceCameraPreviewView;
     SurfaceHolder holder;
     @Bind(R.id.btnShutter)
     ImageButton btnShutter;
-    Camera camera;
+    Camera mCamera;
     @Bind(R.id.spinnerPictureSize)
     Spinner spinnerPictureSize;
     boolean mFlashStatus;
+    Map<Integer, List<String>> mFunctionSelectionMap = new HashMap<>();
+    Map<Integer, String> mCurrentMode = new HashMap<>();
 
     @Nullable
     @Override
@@ -58,6 +65,31 @@ public class CustomCamera extends Fragment {
         holder.addCallback(new PreviewViewHolderCallback());
 
 //        spinnerPictureSize.setAdapter(new SimpleAdapter(getActivity(),null,android.R.layout.simple_list_item_1));
+
+    }
+
+    private void getCameraInitData() {
+        initDefaultSetting();
+    }
+
+    private void initDefaultSetting() {
+        Camera.Parameters parameters;
+        String flashMode;
+        List<String> list;
+
+        if (null != mCamera) {
+            parameters = mCamera.getParameters();
+
+            flashMode = parameters.getFlashMode();
+            if (!TextUtils.isEmpty(flashMode)) {
+                mCurrentMode.put(FLASH_LIGHT, flashMode);
+            }
+
+            list = parameters.getSupportedFlashModes();
+            if (null != list) {
+                mFunctionSelectionMap.put(FLASH_LIGHT, list);
+            }
+        }
     }
 
     @Override
@@ -71,31 +103,55 @@ public class CustomCamera extends Fragment {
 
         switch (view.getId()) {
             case R.id.btnFlashLight:
-                if (null != camera) {
+                if (null != mCamera) {
                     Camera.Parameters parameters;
-                    List flashModeslist;
+                    SelectDialog dialog;
 
-                    parameters = camera.getParameters();
-                    Log.d(TAG, "afterParameters: " + parameters.flatten());
-
-                    mFlashStatus = Camera.Parameters.FLASH_MODE_TORCH.equals(parameters.getFlashMode()) || Camera.Parameters.FLASH_MODE_ON.equals(parameters.getFlashMode()) ? true : false;
-                    mFlashStatus = !mFlashStatus;
-                    CameraConfigurationHelper.setTorch(parameters, mFlashStatus);
-
-                    camera.setParameters(parameters);
-                    Camera.Parameters afterParameters;
-
-                    afterParameters = camera.getParameters();
-                    Log.d(TAG, "afterParameters: " + afterParameters.flatten());
+                    parameters = mCamera.getParameters();
+                    dialog = SelectDialog.newInstance(FLASH_LIGHT, mFunctionSelectionMap.get(FLASH_LIGHT), mCurrentMode.get(FLASH_LIGHT));
                 }
+//                if (null != mCamera) {
+//                    Camera.Parameters parameters;
+//                    List flashModeslist;
+//
+//                    parameters = mCamera.getParameters();
+//                    Log.d(TAG, "afterParameters: " + parameters.flatten());
+//
+//                    mFlashStatus = Camera.Parameters.FLASH_MODE_TORCH.equals(parameters.getFlashMode()) || Camera.Parameters.FLASH_MODE_ON.equals(parameters.getFlashMode()) ? true : false;
+//                    mFlashStatus = !mFlashStatus;
+//                    CameraConfigurationHelper.setTorch(parameters, mFlashStatus);
+//
+//                    mCamera.setParameters(parameters);
+//                    Camera.Parameters afterParameters;
+//
+//                    afterParameters = mCamera.getParameters();
+//                    Log.d(TAG, "afterParameters: " + afterParameters.flatten());
+//                }
                 break;
             case R.id.btnShutter:
-                if (null != camera) {
+                if (null != mCamera) {
                     //通过回调函数保存拍到的照片
-                    camera.takePicture(null, null, new CapturePictureCallback(null, null));
+                    mCamera.takePicture(null, null, new CapturePictureCallback(null, null));
                 }
                 break;
 
+        }
+    }
+
+    @Override
+    public void onClink(int function, int postion) {
+        List<String> list;
+        String expectedMode;
+        String currentMode;
+
+        list = mFunctionSelectionMap.get(function);
+        expectedMode = list.get(postion);
+        currentMode = mCurrentMode.get(function);
+
+        switch (postion) {
+            case FLASH_LIGHT:
+                CameraConfigurationHelper.setTorch();
+                break;
         }
     }
 
@@ -106,17 +162,19 @@ public class CustomCamera extends Fragment {
         public void surfaceCreated(SurfaceHolder holder) {
 
             //不指定那个摄像头,默认是打开后置摄像头
-            camera = Camera.open();
-            if (null == camera)
+            mCamera = Camera.open();
+            if (null == mCamera)
                 return;
 
             try {
-                camera.setPreviewDisplay(holder);
+                mCamera.setPreviewDisplay(holder);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            camera.startPreview();
+            getCameraInitData();
+
+            mCamera.startPreview();
         }
 
         @Override
@@ -127,9 +185,9 @@ public class CustomCamera extends Fragment {
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
 
-            if (null != camera) {
-                camera.release();
-                camera = null;
+            if (null != mCamera) {
+                mCamera.release();
+                mCamera = null;
             }
         }
     }

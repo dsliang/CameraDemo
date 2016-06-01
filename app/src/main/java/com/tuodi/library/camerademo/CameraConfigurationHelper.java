@@ -13,6 +13,7 @@ import java.util.List;
  */
 public class CameraConfigurationHelper {
 
+
     private static final String TAG = CameraConfigurationHelper.class.getSimpleName();
 
     private CameraConfigurationHelper() {
@@ -43,6 +44,33 @@ public class CameraConfigurationHelper {
             parameters.setPreviewSize(realSize.width, realSize.height);
         }
     }
+
+    public static void setFlashMode(Camera.Parameters parameters, String mode) {
+        List<String> modes;
+        String expectedMode;
+
+        modes = parameters.getSupportedFlashModes();
+        expectedMode = findSettableValue("flash mode", modes, mode);
+
+        if (!TextUtils.isEmpty(expectedMode)) {
+            parameters.setFlashMode(expectedMode);
+        }
+
+    }
+
+    public static void setFocusMode(Camera.Parameters parameters, String mode) {
+        List<String> modes;
+        String expectedMode;
+
+        modes = parameters.getSupportedFocusModes();
+        expectedMode = findSettableValue("focus mode", modes, mode);
+
+        if (!TextUtils.isEmpty(expectedMode)) {
+            parameters.setFocusMode(expectedMode);
+        }
+
+    }
+
 
     public static void setTorch(Camera.Parameters parameters, boolean on) {
         List flashModes;
@@ -115,4 +143,5 @@ public class CameraConfigurationHelper {
         Log.i(TAG, "No supported values match");
         return null;
     }
+
 }

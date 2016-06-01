@@ -3,4 +3,7 @@
     <string name="existing_camera">Using Existing Camera Apps</string>
     <string name="custom_camera">Building a Camera App</string>
     <string name="flash_light">flash light</string>
+    <string name="focus_mode">focus mode</string>
+    <string name="preview_size">preview size</string>
+    <string name="picture_size">picture size</string>
 </resources>

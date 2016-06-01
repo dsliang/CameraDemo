@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -14,6 +15,7 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,12 @@ public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink
 
     //闪光灯
     private static final int FLASH_LIGHT = 0x1;
+    //对焦模式
+    private static final int FOCUS_MODE = 0x2;
+    //预览分辨率
+    private static final int PREVIEW_SIZE = 0x3;
+    //图片辨率
+    private static final int PICTURE_SIZE = 0x4;
 
     @Bind(R.id.surfaceCameraPreviewView)
     SurfaceView surfaceCameraPreviewView;
@@ -43,6 +51,7 @@ public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink
     boolean mFlashStatus;
     Map<Integer, List<String>> mFunctionSelectionMap = new HashMap<>();
     Map<Integer, String> mCurrentMode = new HashMap<>();
+    Map<Integer, List<Camera.Size>> mSize = new HashMap<>();
 
     @Nullable
     @Override
@@ -75,20 +84,57 @@ public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink
     private void initDefaultSetting() {
         Camera.Parameters parameters;
         String flashMode;
+        String focusMode;
+        Camera.Size previewSize;
+        Camera.Size pictureSize;
         List<String> list;
+        List<Camera.Size> sizeList;
 
         if (null != mCamera) {
+
             parameters = mCamera.getParameters();
 
+            //闪光灯
             flashMode = parameters.getFlashMode();
             if (!TextUtils.isEmpty(flashMode)) {
                 mCurrentMode.put(FLASH_LIGHT, flashMode);
             }
-
             list = parameters.getSupportedFlashModes();
             if (null != list) {
                 mFunctionSelectionMap.put(FLASH_LIGHT, list);
             }
+
+            //对焦模式
+            focusMode = parameters.getFocusMode();
+            if (!TextUtils.isEmpty(focusMode)) {
+                mCurrentMode.put(FOCUS_MODE, focusMode);
+            }
+            list = parameters.getSupportedFocusModes();
+            if (null != list) {
+                mFunctionSelectionMap.put(FOCUS_MODE, list);
+            }
+
+            //预览分辨率
+            previewSize = parameters.getPreviewSize();
+            mCurrentMode.put(PREVIEW_SIZE, String.valueOf(previewSize.hashCode()));
+            sizeList = parameters.getSupportedPreviewSizes();
+            mSize.put(PREVIEW_SIZE, sizeList);
+            list = new ArrayList<String>();
+            for (Camera.Size item : sizeList) {
+                list.add(String.valueOf(item.hashCode()));
+            }
+            mFunctionSelectionMap.put(PREVIEW_SIZE, list);
+
+            //预览分辨率
+            pictureSize = parameters.getPictureSize();
+            mCurrentMode.put(PICTURE_SIZE, String.valueOf(pictureSize.hashCode()));
+            sizeList = parameters.getSupportedPictureSizes();
+            mSize.put(PICTURE_SIZE, sizeList);
+            list = new ArrayList<String>();
+            for (Camera.Size item : sizeList) {
+                list.add(String.valueOf(item.hashCode()));
+            }
+            mFunctionSelectionMap.put(PICTURE_SIZE, list);
         }
     }
 
@@ -98,17 +144,18 @@ public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink
         ButterKnife.unbind(this);
     }
 
-    @OnClick({R.id.btnShutter, R.id.btnFlashLight})
+    @OnClick({R.id.btnShutter, R.id.btnFlashLight, R.id.btnFocus})
     public void onClick(View view) {
+        Camera.Parameters parameters;
 
         switch (view.getId()) {
             case R.id.btnFlashLight:
                 if (null != mCamera) {
-                    Camera.Parameters parameters;
-                    SelectDialog dialog;
-
                     parameters = mCamera.getParameters();
-                    dialog = SelectDialog.newInstance(FLASH_LIGHT, mFunctionSelectionMap.get(FLASH_LIGHT), mCurrentMode.get(FLASH_LIGHT));
+
+                    SelectDialog
+                            .newInstance(FLASH_LIGHT, mFunctionSelectionMap.get(FLASH_LIGHT), mCurrentMode.get(FLASH_LIGHT))
+                            .show(getFragmentManager(), "");
                 }
 //                if (null != mCamera) {
 //                    Camera.Parameters parameters;
@@ -134,24 +181,49 @@ public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink
                     mCamera.takePicture(null, null, new CapturePictureCallback(null, null));
                 }
                 break;
+            case R.id.btnFocus:
+                if (null != mCamera) {
+                    SelectDialog
+                            .newInstance(FOCUS_MODE, mFunctionSelectionMap.get(FOCUS_MODE), mCurrentMode.get(FOCUS_MODE))
+                            .show(getFragmentManager(), "");
+                }
 
         }
     }
 
     @Override
     public void onClink(int function, int postion) {
+        boolean setParameters;
         List<String> list;
         String expectedMode;
         String currentMode;
+        Camera.Parameters parameters;
 
         list = mFunctionSelectionMap.get(function);
         expectedMode = list.get(postion);
         currentMode = mCurrentMode.get(function);
 
-        switch (postion) {
+        parameters = mCamera.getParameters();
+        Log.d(TAG, "before parameters:" + parameters.flatten());
+
+        setParameters = true;
+        switch (function) {
             case FLASH_LIGHT:
-                CameraConfigurationHelper.setTorch();
+                CameraConfigurationHelper.setFlashMode(parameters, expectedMode);
+                mCurrentMode.put(FLASH_LIGHT, expectedMode);
                 break;
+            case FOCUS_MODE:
+                CameraConfigurationHelper.setFocusMode(parameters, expectedMode);
+                mCurrentMode.put(FOCUS_MODE, expectedMode);
+                break;
+            default:
+                setParameters = false;
+                Log.d(TAG, "after parameters:" + mCamera.getParameters().flatten());
+        }
+
+        if (true == setParameters) {
+            mCamera.setParameters(parameters);
+
         }
     }
 
@@ -173,7 +245,8 @@ public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink
             }
 
             getCameraInitData();
-
+            //预览旋转90度
+            mCamera.setDisplayOrientation(90);
             mCamera.startPreview();
         }
 
@@ -191,4 +264,5 @@ public class CustomCamera extends Fragment implements SelectDialog.DialogOnClink
             }
         }
     }
+
 }

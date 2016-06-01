@@ -1,9 +1,10 @@
 package com.tuodi.library.camerademo;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 
 import java.util.List;
@@ -59,9 +60,16 @@ public class SelectDialog extends DialogFragment {
                 .setSingleChoiceItems(mSelectItems, mCurrentItem, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        if (getActivity() instanceof DialogOnClink) {
-                            ((DialogOnClink) getActivity()).onClink(mFunction, which);
+                        Fragment fragment;
+
+                        mCurrentItem = which;
+                        fragment = getFragmentManager().findFragmentByTag(CustomCamera.class.getSimpleName());
+
+                        if (fragment instanceof DialogOnClink) {
+                            ((DialogOnClink) fragment).onClink(mFunction, which);
                         }
+
+                        dismiss();
                     }
                 })
                 .create();

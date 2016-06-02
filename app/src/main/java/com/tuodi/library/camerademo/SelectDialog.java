@@ -65,8 +65,8 @@ public class SelectDialog extends DialogFragment {
                         mCurrentItem = which;
                         fragment = getFragmentManager().findFragmentByTag(CustomCamera.class.getSimpleName());
 
-                        if (fragment instanceof DialogOnClink) {
-                            ((DialogOnClink) fragment).onClink(mFunction, which);
+                        if (fragment instanceof SelectDialogOnClink) {
+                            ((SelectDialogOnClink) fragment).onClink(mFunction, which);
                         }
 
                         dismiss();
@@ -74,10 +74,6 @@ public class SelectDialog extends DialogFragment {
                 })
                 .create();
 
-    }
-
-    public interface DialogOnClink {
-        public void onClink(int function, int postion);
     }
 
 }

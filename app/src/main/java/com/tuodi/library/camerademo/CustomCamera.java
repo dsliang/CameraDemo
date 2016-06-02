@@ -1,7 +1,10 @@
 package com.tuodi.library.camerademo;
 
+import android.annotation.TargetApi;
 import android.hardware.Camera;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
@@ -11,7 +14,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
+import android.widget.Switch;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,6 +56,8 @@ public class CustomCamera extends Fragment implements SelectDialogOnClink {
 
     Map<Integer, List<Camera.Size>> mSize = new HashMap<>();
     Map<Integer, Camera.Size> mCurrentSize = new HashMap<>();
+    @Bind(R.id.switchAutoFoucs)
+    Switch switchAutoFoucs;
 
     @Nullable
     @Override
@@ -62,8 +69,10 @@ public class CustomCamera extends Fragment implements SelectDialogOnClink {
         return view;
     }
 
+    Handler mHandler = new Handler();
+
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         holder = surfaceCameraPreviewView.getHolder();
@@ -72,8 +81,37 @@ public class CustomCamera extends Fragment implements SelectDialogOnClink {
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         holder.addCallback(new PreviewViewHolderCallback());
 
-//        spinnerPictureSize.setAdapter(new SimpleAdapter(getActivity(),null,android.R.layout.simple_list_item_1));
+        switchAutoFoucs.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(final CompoundButton buttonView, boolean isChecked) {
 
+
+                if (true == isChecked) {
+                    Log.d(TAG, "call autoFocus function");
+                    mCamera.autoFocus(new Camera.AutoFocusCallback() {
+                        @Override
+                        public void onAutoFocus(boolean success, Camera camera) {
+                            buttonView.setChecked(false);
+                            //不断循环对焦
+//                            mHandler.postDelayed(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    buttonView.setChecked(true);
+//                                }
+//                            }, 1500);
+                            if (true == success)
+                                Log.d(TAG, "Autofocus success");
+                            else
+                                Log.d(TAG, "Autofocus fails");
+                        }
+
+                    });
+                } else {
+                    Log.d(TAG, "call cancelAutoFocus function");
+                    mCamera.cancelAutoFocus();
+                }
+            }
+        });
     }
 
     private void getCameraInitData() {
@@ -241,8 +279,11 @@ public class CustomCamera extends Fragment implements SelectDialogOnClink {
     class PreviewViewHolderCallback implements SurfaceHolder.Callback {
 
 
+        @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
+
+            Camera.Parameters parameters;
 
             //不指定那个摄像头,默认是打开后置摄像头
             mCamera = Camera.open();
@@ -258,6 +299,17 @@ public class CustomCamera extends Fragment implements SelectDialogOnClink {
             getCameraInitData();
             //预览旋转90度
             mCamera.setDisplayOrientation(90);
+
+            parameters = mCamera.getParameters();
+
+            //图片旋转90度
+            parameters.setRotation(90);
+            mCamera.setParameters(parameters);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                mCamera.enableShutterSound(true);
+            }
+
             mCamera.startPreview();
         }
 

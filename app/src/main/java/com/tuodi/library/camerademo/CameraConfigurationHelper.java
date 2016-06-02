@@ -28,7 +28,7 @@ public class CameraConfigurationHelper {
         realSize = findSettableValue("set picture size", previewSizes, desiredSize);
 
         if (null != realSize) {
-            parameters.setPreviewSize(realSize.width, realSize.height);
+            parameters.setPictureSize(realSize.width, realSize.height);
         }
     }
 

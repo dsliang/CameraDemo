@@ -23,6 +23,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
+                android:padding="4dp"
                 android:text="@string/flash_light" />
 
             <Button
@@ -30,6 +31,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
+                android:padding="4dp"
                 android:text="@string/focus_mode" />
         </LinearLayout>
 
@@ -43,13 +45,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
-                android:text="@string/flash_light" />
+                android:padding="4dp"
+                android:text="@string/preview_size" />
 
             <Button
                 android:id="@+id/btnPictureSize"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
+                android:padding="4dp"
                 android:text="@string/picture_size" />
         </LinearLayout>
 
@@ -63,11 +67,5 @@
         android:layout_gravity="bottom|center"
         android:layout_margin="8dp"
         android:background="@drawable/shutter_background" />
-
-    <Spinner
-        android:id="@+id/spinnerPictureSize"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"></Spinner>
 
 </FrameLayout>
